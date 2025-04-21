@@ -1,26 +1,44 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-<title>Image to Data URI</title>
+  <title>Image to Data URI</title>
+  <style>
+    #drop_zone {
+      border: 2px dashed #ccc;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    #drop_zone.dragover {
+      background-color: #eee;
+    }
+  </style>
 </head>
+
 <body>
   <h1>Upload an image to get its Data URI</h1>
   <span style="font-size: 0.6em">warning: website may lag if the image is too large</span><br><br>
-  <span>upload image:</span>
-  <br>
-  <input type="file" id="imageUpload" accept="image/*">
+
+  <div id="drop_zone">
+    <span>Drag and drop an image here, or click to upload</span>
+    <input type="file" id="imageUpload" accept="image/*" style="display: none;">
+  </div>
+
   <br><br>
-  <code id="dataURI" style="font-size: 0.7em ;background-color: #999; white-space: nowrap; padding: 5px; border-radius: 2px">DataUri</code>
+  <code id="dataURI"
+    style="font-size: 0.7em ;background-color: #999; white-space: nowrap; padding: 5px; border-radius: 2px">DataUri</code>
   <br><br>
-  <button id="copyButton" disabled>Copy URI</button> 
+  <button id="copyButton" disabled>Copy URI</button>
 
   <script>
     const imageUpload = document.getElementById('imageUpload');
     const dataURI = document.getElementById('dataURI');
     const copyButton = document.getElementById('copyButton');
+    const dropZone = document.getElementById('drop_zone');
 
-    imageUpload.addEventListener('change', (event) => {
-      const file = event.target.files[0];
+    function handleFile(file) {
       const reader = new FileReader();
 
       reader.onload = (e) => {
@@ -29,6 +47,11 @@
       };
 
       reader.readAsDataURL(file);
+    }
+
+    imageUpload.addEventListener('change', (event) => {
+      const file = event.target.files[0];
+      handleFile(file);
     });
 
     copyButton.addEventListener('click', () => {
@@ -40,6 +63,41 @@
           console.error('Failed to copy: ', err);
         });
     });
+
+
+    dropZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropZone.classList.add('dragover');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+      dropZone.classList.remove('dragover');
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropZone.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      handleFile(file);
+    });
+
+    dropZone.addEventListener('click', () => {
+      imageUpload.click();
+    });
+
+    document.addEventListener('paste', (event) => {
+      const items = (event.clipboardData || event.clipboardData).items;
+      for (let index in items) {
+        const item = items[index];
+        if (item.kind === 'file' && item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          handleFile(blob);
+          event.preventDefault();
+          break;
+        }
+      }
+    });
   </script>
 </body>
+
 </html>
